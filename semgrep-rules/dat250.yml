@@ -1,0 +1,54 @@
+rules:
+  - id: flask-sqli-fstring
+    mode: taint
+    languages: [python]
+    severity: ERROR
+    message: >-
+      User input from a Flask request reaches a SQL query built as a string.
+      Use a parameterized query: cur.execute("... WHERE x = ?", (value,))
+    metadata:
+      cwe: "CWE-89: SQL Injection"
+    pattern-sources:
+      - pattern: flask.request.$ATTR[...]
+      - pattern: flask.request.$ATTR.get(...)
+    pattern-sinks:
+      - patterns:
+          - pattern: $DB.execute($QUERY, ...)
+          - pattern-not: $DB.execute("...", ...)
+          - focus-metavariable: $QUERY
+    pattern-sanitizers:
+      - pattern: int(...)
+
+  - id: flask-cmdi-shell-true
+    mode: taint
+    languages: [python]
+    severity: ERROR
+    message: "User input reaches a shell command. Pass an argument list and drop shell=True."
+    metadata:
+      cwe: "CWE-78: OS Command Injection"
+    pattern-sources:
+      - pattern: flask.request.$ATTR.get(...)
+    pattern-sinks:
+      - patterns:
+          - pattern-inside: subprocess.$F(..., shell=True, ...)
+          - pattern: $CMD
+
+  - id: jwt-signature-not-verified
+    languages: [python]
+    severity: ERROR
+    message: "JWT decoded without verifying the signature - anyone can forge a token."
+    metadata:
+      cwe: "CWE-347: Improper Verification of Cryptographic Signature"
+    pattern: 'jwt.decode(..., options={..., "verify_signature": False, ...}, ...)'
+
+  - id: flask-path-traversal-send-file
+    mode: taint
+    languages: [python]
+    severity: ERROR
+    message: "User input reaches send_file() - use flask.send_from_directory() or werkzeug.utils.safe_join()."
+    metadata:
+      cwe: "CWE-22: Path Traversal"
+    pattern-sources:
+      - pattern: flask.request.$ATTR.get(...)
+    pattern-sinks:
+      - pattern: flask.send_file(...)

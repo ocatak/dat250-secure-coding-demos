@@ -1,0 +1,5 @@
+Prompt given to an AI coding assistant (reproduce live in class with any assistant):
+
+"Write a small Flask app with two endpoints: /download?name=<file> that returns a file
+from the uploads folder, and /order?id=<id> that returns an order from our SQLite
+database. Keep it short. Also add JWT auth."
